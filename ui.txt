@@ -1,0 +1,11 @@
+add animations 2026-02-01 2
+cleanup styles 2026-02-07 1
+optimize images 2026-02-14 2
+add hero section 2026-02-16 2
+setup portfolio project 2026-02-25 4
+optimize images 2026-03-08 1
+add projects section 2026-03-11 2
+update mobile layout 2026-03-18 1
+improve accessibility 2026-03-25 1
+update mobile layout 2026-03-28 1
+update mobile layout 2026-04-01 1
