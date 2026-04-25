@@ -12,6 +12,16 @@ export default function HeroScroll() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
+  const loadingStatuses = [
+    "LOADING SYSTEM",
+    "INITIALIZING",
+    "DECODING",
+    "CALIBRATING",
+    "PREPARING"
+  ];
+  
+  const [statusIndex, setStatusIndex] = useState(0);
+  
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
@@ -32,7 +42,7 @@ export default function HeroScroll() {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  // Animate progress bar with anime.js
+  // Animate progress bar and update status
   useEffect(() => {
     if (progressBarRef.current) {
       animate(progressBarRef.current, {
@@ -40,6 +50,15 @@ export default function HeroScroll() {
         duration: 300,
         ease: 'outQuad'
       });
+    }
+    
+    // Update status message based on progress peaks
+    const newIndex = Math.min(
+      loadingStatuses.length - 1, 
+      Math.floor((loadingProgress / 100) * loadingStatuses.length)
+    );
+    if (newIndex !== statusIndex) {
+      setStatusIndex(newIndex);
     }
   }, [loadingProgress]);
 
@@ -61,33 +80,51 @@ export default function HeroScroll() {
   useEffect(() => {
     const imagesArray: HTMLImageElement[] = new Array(FRAME_COUNT);
     let loadedCount = 0;
+    let hasTimedOut = false;
+
+    // Safety timeout: if it takes more than 10s, force clear the loader
+    const safetyTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn("Loading timed out, clearing loader...");
+        hasTimedOut = true;
+        setIsLoading(false);
+      }
+    }, 10000);
+
+    const handleImageLoad = (index: number, img: HTMLImageElement) => {
+      if (hasTimedOut) return;
+      
+      loadedCount++;
+      const progress = Math.round((loadedCount / FRAME_COUNT) * 100);
+      setLoadingProgress(progress);
+      imagesArray[index] = img;
+
+      // Draw first frame immediately
+      if (index === 0 && canvasRef.current) {
+        requestAnimationFrame(() => drawImage(img));
+      }
+
+      if (loadedCount === FRAME_COUNT) {
+        clearTimeout(safetyTimeout);
+        setImages(imagesArray);
+        setTimeout(() => setIsLoading(false), 400);
+      }
+    };
 
     for (let i = 0; i < FRAME_COUNT; i++) {
       const img = new Image();
       const frameNumber = (i + 1).toString().padStart(3, '0');
       
-      img.onload = () => {
-        loadedCount++;
-        setLoadingProgress(Math.round((loadedCount / FRAME_COUNT) * 100));
-        imagesArray[i] = img;
-
-        // Draw first frame immediately if available
-        if (i === 0 && canvasRef.current) {
-          requestAnimationFrame(() => drawImage(img));
-        }
-
-        if (loadedCount === FRAME_COUNT) {
-          setImages(imagesArray);
-          // Delay hiding slightly for smooth 100% fill visual
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 400);
-        }
+      img.onload = () => handleImageLoad(i, img);
+      img.onerror = () => {
+        console.error(`Failed to load frame ${frameNumber}`);
+        handleImageLoad(i, img); // Still count as 'loaded' to avoid stuck loader
       };
       
-      // Set src after onload to ensure it catches cached images correctly
       img.src = `/sequence/ezgif-frame-${frameNumber}.png`;
     }
+
+    return () => clearTimeout(safetyTimeout);
   }, []);
 
   const drawImage = (img: HTMLImageElement) => {
@@ -163,28 +200,69 @@ export default function HeroScroll() {
   const y3 = useTransform(smoothProgress, [0.65, 0.85], [0, -50]);
 
   return (
-    <div ref={containerRef} className="relative h-[500vh] w-full" style={{ backgroundColor: BG_COLOR }}>
+    <div ref={containerRef} className="relative h-[500dvh] w-full" style={{ backgroundColor: BG_COLOR }}>
       {showLoader && (
         <div 
           ref={loaderRef}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#121212]"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0d0d0d]"
         >
-          <div className="w-64 max-w-[80vw] space-y-6">
-            <div className="flex justify-between items-end text-white/90 px-1">
-              <span className="text-xs uppercase tracking-[0.3em] font-medium text-zinc-400">Loading</span>
-              <span className="text-2xl font-light tracking-tighter">{loadingProgress}%</span>
-            </div>
-            <div className="w-full h-[1px] bg-white/10 overflow-hidden">
-              <div 
-                ref={progressBarRef}
-                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 w-0"
+          <div className="relative flex flex-col items-center">
+            {/* Minimalist Rotating Rings */}
+            <div className="relative w-32 h-32 mb-16">
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 rounded-full border-t border-b border-blue-500/30"
               />
+              <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-2 rounded-full border-l border-r border-purple-500/40"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold tracking-[0.2em] text-white/90">AS</span>
+              </div>
+              
+              {/* Glowing Pulse */}
+              <motion.div 
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 rounded-full bg-blue-500/10 blur-2xl"
+              />
+            </div>
+
+            <div className="w-64 space-y-8 flex flex-col items-center">
+              {/* Minimalist Percentage */}
+              <div className="text-center">
+                <span className="text-5xl font-light tracking-tighter text-white/100 tabular-nums">
+                  {loadingProgress}
+                </span>
+                <span className="text-xl font-light text-white/40 ml-1">%</span>
+              </div>
+
+              {/* Status Message */}
+              <motion.div 
+                key={statusIndex}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-[10px] uppercase tracking-[0.6em] font-normal text-white/30"
+              >
+                {loadingStatuses[statusIndex]}
+              </motion.div>
+
+              {/* Invisible Progress Bar (Functional) */}
+              <div className="w-full h-[1px] bg-white/5 overflow-hidden rounded-full">
+                <div 
+                  ref={progressBarRef}
+                  className="h-full bg-white/40 w-0"
+                />
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+      <div className="sticky top-0 h-[100dvh] w-full overflow-hidden">
         
         {/* The Frame Canvas */}
         <canvas 
@@ -199,36 +277,36 @@ export default function HeroScroll() {
         <div className="absolute inset-0 max-w-[1400px] mx-auto px-6 md:px-12 pointer-events-none flex flex-col justify-center z-10">
           
           {/* Section 1 */}
-          <motion.div style={{ opacity: opacity1, y: y1, scale: scale1 }} className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <h1 className="text-5xl md:text-7xl lg:text-[6rem] font-bold tracking-tighter text-white/90 drop-shadow-xl mb-4">
+          <motion.div style={{ opacity: opacity1, y: y1, scale: scale1 }} className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+            <h1 className="text-4xl md:text-7xl lg:text-[6rem] font-bold tracking-tighter text-white/90 drop-shadow-xl mb-4">
               Arjun Singh.<br/>
-              <span className="text-zinc-400 font-medium text-3xl md:text-5xl">Full Stack Developer</span>
+              <span className="text-zinc-400 font-medium text-2xl md:text-5xl">Full Stack Developer</span>
             </h1>
-            <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mt-2 tracking-wide">
+            <p className="text-zinc-400 text-base md:text-xl max-w-2xl mt-2 tracking-wide">
               React / Next.js / Node.js<br/>
               Chandigarh, India
             </p>
           </motion.div>
 
           {/* Section 2 */}
-          <motion.div style={{ opacity: opacity2, y: y2 }} className="absolute inset-0 flex flex-col items-start justify-center w-full md:w-2/3 lg:w-1/2">
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white/90 leading-tight drop-shadow-xl mb-6">
+          <motion.div style={{ opacity: opacity2, y: y2 }} className="absolute inset-0 flex flex-col items-start justify-center w-full md:w-2/3 lg:w-1/2 px-4 md:px-0">
+            <h2 className="text-2xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white/90 leading-tight drop-shadow-xl mb-6">
               Summary
             </h2>
-            <p className="text-zinc-400 text-lg md:text-xl xl:text-2xl leading-relaxed max-w-2xl">
+            <p className="text-zinc-400 text-base md:text-xl xl:text-2xl leading-relaxed max-w-2xl">
               Full Stack Developer with 4+ years of experience in React.js, Next.js, Node.js, TypeScript, MongoDB, Redis, and AWS. Skilled in scalable API development, microservices, caching, system design, and performance optimization.
             </p>
           </motion.div>
 
           {/* Section 3 */}
-          <motion.div style={{ opacity: opacity3, y: y3 }} className="absolute inset-0 flex flex-col items-end justify-center text-right w-full ml-auto md:w-2/3 lg:w-1/2 pointer-events-auto">
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white/90 leading-tight drop-shadow-xl mb-6">
+          <motion.div style={{ opacity: opacity3, y: y3 }} className="absolute inset-0 flex flex-col items-end justify-center text-right w-full ml-auto md:w-2/3 lg:w-1/2 pointer-events-auto px-4 md:px-0">
+            <h2 className="text-2xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white/90 leading-tight drop-shadow-xl mb-6">
               Contact
             </h2>
-            <div className="text-zinc-400 text-lg md:text-xl xl:text-2xl space-y-2 mb-8">
+            <div className="text-zinc-400 text-base md:text-xl xl:text-2xl space-y-2 mb-8">
               <p className="hover:text-white transition-colors cursor-pointer">+91-8146260465</p>
               <p className="hover:text-white transition-colors cursor-pointer">arjunsingh814260@gmail.com</p>
-              <p className="hover:text-white transition-colors cursor-pointer text-sm md:text-base mt-2 text-purple-400/80">
+              <p className="hover:text-white transition-colors cursor-pointer text-xs md:text-base mt-2 text-purple-400/80">
                 Remote | Gurgaon | Bangalore | Pune | Hyderabad
               </p>
             </div>
@@ -237,7 +315,7 @@ export default function HeroScroll() {
               href="/resume.pdf" 
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-full overflow-hidden hover:bg-white/10 hover:scale-105 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all duration-300"
+              className="group relative inline-flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 bg-white/5 border border-white/10 rounded-full overflow-hidden hover:bg-white/10 hover:scale-105 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               <span className="text-white font-medium tracking-wide z-10">Download Resume</span>

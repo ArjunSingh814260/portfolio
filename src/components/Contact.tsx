@@ -50,7 +50,7 @@ export default function Contact() {
   };
 
   return (
-    <section className="bg-[#121212] py-16 md:py-24 px-6 lg:px-12 relative z-20 w-full flex items-center">
+    <section className="bg-[#121212] py-12 md:py-24 px-4 sm:px-6 lg:px-12 relative z-20 w-full flex items-center">
       <div className="max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
           
@@ -61,7 +61,7 @@ export default function Contact() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
-              className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-6"
+              className="text-4xl md:text-7xl font-bold tracking-tighter text-white mb-6"
             >
               Let's Talk
             </motion.h2>
@@ -70,7 +70,7 @@ export default function Contact() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, type: "spring", bounce: 0.4, delay: 0.05 }}
-              className="text-zinc-200 text-lg md:text-2xl font-medium max-w-xl leading-relaxed mb-12"
+              className="text-zinc-200 text-base md:text-2xl font-medium max-w-xl leading-relaxed mb-12"
             >
               Have a project in mind or just want to say hi? I'm always open to discussing new opportunities and creative ideas.
             </motion.p>
@@ -83,16 +83,16 @@ export default function Contact() {
               className="space-y-6"
             >
               <div className="flex items-center gap-4 text-zinc-200 hover:text-white transition-colors duration-300 font-medium">
-                <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5 flex-shrink-0">
                   <Mail className="w-5 h-5 text-emerald-400" />
                 </div>
-                <span className="text-lg">arjunsingh814260@gmail.com</span>
+                <span className="text-sm sm:text-lg break-all">arjunsingh814260@gmail.com</span>
               </div>
               <div className="flex items-center gap-4 text-zinc-200 hover:text-white transition-colors duration-300 font-medium">
-                <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5 flex-shrink-0">
                   <MapPin className="w-5 h-5 text-emerald-400" />
                 </div>
-                <span className="text-lg">Chandigarh, India</span>
+                <span className="text-sm sm:text-lg">Chandigarh, India</span>
               </div>
             </motion.div>
           </div>
@@ -104,7 +104,7 @@ export default function Contact() {
             whileHover={{ scale: 1.01 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, type: "spring", bounce: 0.4, delay: 0.15 }}
-            className="relative rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-md p-8 md:p-12 shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-all duration-300"
+            className="relative rounded-[1.5rem] md:rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-md p-6 md:p-12 shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-all duration-300"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 opacity-50 blur-3xl -z-10 rounded-[2rem]" />
             
