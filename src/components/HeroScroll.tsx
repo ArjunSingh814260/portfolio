@@ -1,6 +1,7 @@
 "use client";
 
 import { useScroll, useTransform, motion, useSpring } from "framer-motion";
+import { animate } from "animejs";
 import { useEffect, useRef, useState } from "react";
 import { Download } from "lucide-react";
 
@@ -25,27 +26,67 @@ export default function HeroScroll() {
 
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const currentIndexRef = useRef(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showLoader, setShowLoader] = useState(true);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  // Animate progress bar with anime.js
+  useEffect(() => {
+    if (progressBarRef.current) {
+      animate(progressBarRef.current, {
+        width: `${loadingProgress}%`,
+        duration: 300,
+        ease: 'outQuad'
+      });
+    }
+  }, [loadingProgress]);
+
+  // Animate loader fade out with anime.js
+  useEffect(() => {
+    if (!isLoading && loaderRef.current) {
+      animate(loaderRef.current, {
+        opacity: [1, 0],
+        duration: 800,
+        ease: 'inOutQuad',
+        onComplete: () => {
+          setShowLoader(false);
+        }
+      });
+    }
+  }, [isLoading]);
 
   // Preload images
   useEffect(() => {
-    const loadedImages: HTMLImageElement[] = [];
+    const imagesArray: HTMLImageElement[] = new Array(FRAME_COUNT);
     let loadedCount = 0;
 
     for (let i = 0; i < FRAME_COUNT; i++) {
       const img = new Image();
-      // Ensure file names match: ezgif-frame-001.png to ezgif-frame-120.png
       const frameNumber = (i + 1).toString().padStart(3, '0');
-      img.src = `/sequence/ezgif-frame-${frameNumber}.png`;
       
       img.onload = () => {
         loadedCount++;
+        setLoadingProgress(Math.round((loadedCount / FRAME_COUNT) * 100));
+        imagesArray[i] = img;
+
+        // Draw first frame immediately if available
+        if (i === 0 && canvasRef.current) {
+          requestAnimationFrame(() => drawImage(img));
+        }
+
         if (loadedCount === FRAME_COUNT) {
-          setImages(loadedImages);
-          // Initial draw
-          requestAnimationFrame(() => drawImage(loadedImages[0]));
+          setImages(imagesArray);
+          // Delay hiding slightly for smooth 100% fill visual
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 400);
         }
       };
-      loadedImages.push(img);
+      
+      // Set src after onload to ensure it catches cached images correctly
+      img.src = `/sequence/ezgif-frame-${frameNumber}.png`;
     }
   }, []);
 
@@ -123,6 +164,26 @@ export default function HeroScroll() {
 
   return (
     <div ref={containerRef} className="relative h-[500vh] w-full" style={{ backgroundColor: BG_COLOR }}>
+      {showLoader && (
+        <div 
+          ref={loaderRef}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#121212]"
+        >
+          <div className="w-64 max-w-[80vw] space-y-6">
+            <div className="flex justify-between items-end text-white/90 px-1">
+              <span className="text-xs uppercase tracking-[0.3em] font-medium text-zinc-400">Loading</span>
+              <span className="text-2xl font-light tracking-tighter">{loadingProgress}%</span>
+            </div>
+            <div className="w-full h-[1px] bg-white/10 overflow-hidden">
+              <div 
+                ref={progressBarRef}
+                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 w-0"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sticky top-0 h-screen w-full overflow-hidden">
         
         {/* The Frame Canvas */}

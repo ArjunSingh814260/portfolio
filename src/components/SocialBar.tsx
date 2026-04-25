@@ -6,9 +6,9 @@ import { motion } from "framer-motion";
 
 export default function SocialBar() {
   const socials = [
-    { name: "GitHub", icon: FaGithub, href: "https://github.com/arjunsingh" },
-    { name: "LinkedIn", icon: FaLinkedin, href: "https://linkedin.com/in/arjunsingh" },
-    { name: "Twitter", icon: FaTwitter, href: "https://twitter.com/arjunsingh" },
+    { name: "GitHub", icon: FaGithub, href: "https://github.com/ArjunSingh814260" },
+    { name: "LinkedIn", icon: FaLinkedin, href: "https://www.linkedin.com/in/arjunsingh07" },
+    // { name: "Twitter", icon: FaTwitter, href: "https://twitter.com/arjunsingh" },
     { name: "Email", icon: Mail, href: "mailto:arjunsingh814260@gmail.com" },
   ];
 
